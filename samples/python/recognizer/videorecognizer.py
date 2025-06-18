@@ -251,16 +251,9 @@ def checkResult(operation, result):
     return(warpedBoxes, texts_lst)
 
 # Main predict function that runs the model for given frame and calls other helper functions for processing and data updating.
-def predict(args,frame):
-
-    # Check if image exist
-    if not os.path.isfile(args.image):
-        print(TAG + "File doesn't exist: %s" % args.image)
-        assert False
-
-    # Decode the image
-    image = Image.open(args.image)
-    #image = frame
+def predict(args, pil_image):
+    # Decode the image - now accepts PIL Image directly
+    image = pil_image
 
     width, height = image.size
     # Read the EXIF orientation value
@@ -420,7 +413,6 @@ if __name__ == "__main__":
     This is the recognizer sample using python language
     """)
 
-    parser.add_argument("--image", required=False, default="../../../assets/images/frame2.jpg", help="Path to the image with ALPR data to recognize")
     parser.add_argument("--video", required=True, help="Path to the video with ALPR data to recognize")
     parser.add_argument("--assets", required=False, default="../../../assets", help="Path to the assets folder")
     parser.add_argument("--charset", required=False, default="latin", help="Defines the recognition charset (a.k.a alphabet) value (latin, korean, chinese...)")
@@ -444,28 +436,23 @@ if __name__ == "__main__":
 
     print(f"Processing video file {video_address}")
     print(f"Output will be written to {annotated_video_address}")
-    print(f"Using temp file {args.image}")
-
-    image = Image.open(args.image)
 
     savedVideo, fps = videoWritterSetup(annotated_video_address)
     try:
         for i in range(fps*12):
             check, frame = video.read()
             key = cv2.waitKey(1)
-            if os.path.isfile(args.image):
-                os.remove(args.image)
-            cv2.imwrite(args.image, frame)
             
-            warpedBox, texts = predict(args, frame)
+            # Convert OpenCV frame (BGR) to PIL Image (RGB) in memory
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            pil_image = Image.fromarray(frame_rgb)
+            
+            warpedBox, texts = predict(args, pil_image)
             
             frame = displayInCv2(warpedBox, texts, frame)
             #frame = cv2.resize(frame,(720,480),fx=0,fy=0,interpolation=cv2.INTER_CUBIC)
             savedVideo.write(frame)
-            with open("warpedBoxes.txt",'w') as f:
-                f.write("{}".format(warpedBox))
-                
-            cv2.imwrite(args.image,frame)
+            
             lastFrameCars = currFrameCars.copy()
             currFrameCars.clear()
         
