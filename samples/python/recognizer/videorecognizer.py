@@ -68,7 +68,9 @@ JSON_CONFIG = {
 checkBoxout = (0.554,0.60)
 checkBoxin = (0.36,0.41)
 
-
+video_address = "/home/guco/Software/LPR/ultimateALPR-SDK/assets/images/traffic.mp4"
+video = cv2.VideoCapture(video_address)
+savedVideo = None  # This will be video created after processing the frames.
 
 address = "https://192.168.43.1:8080/video"
 # #If you want to capture images from webcam, uncoment this
@@ -331,8 +333,8 @@ def checkFPS():
     print("Cars.checkBoxout:",Cars.checkBoxout,"Cars.checkBoxin:",Cars.checkBoxin," imageSize:",imageSize," Cars.imageSize:",Cars.imageSize)
     return(fps)
 
-# Return VideoWriter object
-def videoWriterSetup(output_file):
+# Return VideoWritter object
+def videoWritterSetup(output_file):
     global savedVideo
     frame_width = int(video.get(3))
     frame_height = int(video.get(4))
@@ -418,6 +420,7 @@ if __name__ == "__main__":
     This is the recognizer sample using python language
     """)
 
+    parser.add_argument("--image", required=False, default="../../../assets/images/frame2.jpg", help="Path to the image with ALPR data to recognize")
     parser.add_argument("--video", required=True, help="Path to the video with ALPR data to recognize")
     parser.add_argument("--assets", required=False, default="../../../assets", help="Path to the assets folder")
     parser.add_argument("--charset", required=False, default="latin", help="Defines the recognition charset (a.k.a alphabet) value (latin, korean, chinese...)")
@@ -439,12 +442,13 @@ if __name__ == "__main__":
     name, extension = os.path.splitext(filename)
     annotated_video_address = os.path.join(directory, f"{name}_annotated{extension}")
 
-    video = cv2.VideoCapture(video_address)
-    savedVideo = None  # This will be video created after processing the frames.
+    print(f"Processing video file {video_address}")
+    print(f"Output will be written to {annotated_video_address}")
+    print(f"Using temp file {args.image}")
 
-    # image = Image.open(args.image)
+    image = Image.open(args.image)
 
-    savedVideo, fps = videoWriterSetup(annotated_video_address)
+    savedVideo, fps = videoWritterSetup(annotated_video_address)
     try:
         for i in range(fps*12):
             check, frame = video.read()
@@ -461,7 +465,7 @@ if __name__ == "__main__":
             with open("warpedBoxes.txt",'w') as f:
                 f.write("{}".format(warpedBox))
                 
-            cv2.imwrite("../../../assets/images/frame2.jpg",frame)
+            cv2.imwrite(args.image,frame)
             lastFrameCars = currFrameCars.copy()
             currFrameCars.clear()
         
