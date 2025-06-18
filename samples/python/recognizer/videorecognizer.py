@@ -34,6 +34,7 @@ import os
 import json
 import numpy as np
 import time
+import cProfile, pstats
 
 # EXIF orientation TAG
 ORIENTATION_TAG = [orient for orient in ExifTags.TAGS.keys() if ExifTags.TAGS[orient] == 'Orientation']
@@ -450,6 +451,11 @@ if __name__ == "__main__":
     print(f"Output will be written to {annotated_video_address}")
     print(f"Using temp file {args.image}")
 
+
+    pr = cProfile.Profile()
+
+    pr.enable()
+
     image = Image.open(args.image)
 
     savedVideo, fps = videoWritterSetup(annotated_video_address)
@@ -496,6 +502,12 @@ if __name__ == "__main__":
                 print(f"Processed {frame_count} frames...")
         
         print(f"Completed processing {frame_count} frames")
+
+        pr.disable()
+
+        stats = pstats.Stats(pr).sort_stats('cumtime')
+        stats.dump_stats("pstats.prof")
+
     except KeyboardInterrupt:
         print("mission abort")
     #except Exception as e:
